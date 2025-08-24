@@ -6,9 +6,13 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useKinielaContract } from '@/hooks/useKiniela';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealMonadBalance } from '@/hooks/useRealMonadBalance';
+import { useMockMarkets } from '@/hooks/useMockMarkets';
+import { useFixedBalance } from '@/hooks/useFixedBalance';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { AppKitButton } from '@reown/appkit-wagmi-react-native';
@@ -124,6 +128,20 @@ export default function ProfileScreen() {
     claimWinnings 
   } = useKinielaContract();
 
+  // ✅ Balances reales y ficticios de MONAD
+  const { 
+    realBalance: realMonadBalance, 
+    fictionalBalance: fictionalMonadBalance,
+    isLoading: balanceLoading,
+    error: balanceError 
+  } = useRealMonadBalance();
+
+  // ✅ Estadísticas del demo
+  const { stats: demoStats } = useMockMarkets();
+
+  // ✅ Balance fijo y historial de compras
+  const { currentBalance, purchases, resetData } = useFixedBalance();
+
   const handleClaimWinnings = async (betId: string) => {
     try {
       await claimWinnings.mutateAsync(betId);
@@ -196,31 +214,116 @@ export default function ProfileScreen() {
             </View>
           </View>
           
+          {/* Balance Real de MONAD */}
           <View style={styles.balanceContainer}>
-            <ThemedText style={styles.balanceLabel}>Balance MXNB:</ThemedText>
-            <ThemedText style={styles.balanceValue}>{mxnbBalance.toFixed(2)}</ThemedText>
+            <ThemedText style={styles.balanceLabel}>Balance $MON (Real):</ThemedText>
+            <View style={styles.balanceWithStatus}>
+              <ThemedText style={[styles.balanceValue, { color: '#FFD700' }]}>
+                {balanceLoading ? '...' : realMonadBalance.toFixed(6)}
+              </ThemedText>
+              {realMonadBalance > 0 && (
+                <View style={styles.realBadge}>
+                  <ThemedText style={styles.realBadgeText}>✅ Real</ThemedText>
+                </View>
+              )}
+            </View>
+          </View>
+
+          {/* Balance Fijo */}
+          <View style={styles.balanceContainer}>
+            <ThemedText style={styles.balanceLabel}>Balance $MON (App):</ThemedText>
+            <View style={styles.balanceWithStatus}>
+              <ThemedText style={[styles.balanceValue, { color: colorsRGB.primary }]}>
+                {currentBalance.toFixed(2)}
+              </ThemedText>
+              <View style={styles.demoBadge}>
+                <ThemedText style={styles.demoBadgeText}>💰 App</ThemedText>
+              </View>
+            </View>
+          </View>
+
+          {/* Información adicional */}
+          {balanceError && (
+            <View style={styles.errorContainer}>
+              <ThemedText style={styles.errorText}>⚠️ Error: {balanceError}</ThemedText>
+            </View>
+          )}
+
+          {realMonadBalance === 0 && isConnected && (
+            <TouchableOpacity 
+              style={styles.helpContainer}
+              onPress={() => Alert.alert(
+                'Balance Real vs Demo',
+                'Tu balance real es 0 $MON. El balance demo te permite probar la aplicación con 1000 $MON ficticios.\n\nPara obtener $MON real:\n• Usa un faucet de Monad testnet\n• O intercambia tokens en un DEX'
+              )}
+            >
+              <ThemedText style={styles.helpText}>ℹ️ ¿Por qué tengo 0 $MON real?</ThemedText>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Estadísticas de Mercados */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statsHeader}>
+            <ThemedText style={styles.statsTitle}>📊 Estadísticas Mercados</ThemedText>
+          </View>
+          <View style={styles.statsGrid}>
+            <View style={styles.statItem}>
+              <ThemedText style={styles.statValue}>{demoStats.totalMarkets}</ThemedText>
+              <ThemedText style={styles.statLabel}>Markets Totales</ThemedText>
+            </View>
+            <View style={styles.statItem}>
+              <ThemedText style={styles.statValue}>{demoStats.activeMarkets}</ThemedText>
+              <ThemedText style={styles.statLabel}>Markets Activos</ThemedText>
+            </View>
+            <View style={styles.statItem}>
+              <ThemedText style={[styles.statValue, { color: colorsRGB.primary }]}>
+                {purchases.reduce((sum, p) => sum + p.amount, 0).toFixed(1)}
+              </ThemedText>
+              <ThemedText style={styles.statLabel}>Total Gastado ($MON)</ThemedText>
+            </View>
+            <View style={styles.statItem}>
+              <ThemedText style={styles.statValue}>{purchases.length}</ThemedText>
+              <ThemedText style={styles.statLabel}>Compras Realizadas</ThemedText>
+            </View>
+            <View style={styles.statItem}>
+              <ThemedText style={[
+                styles.statValue, 
+                { color: demoStats.userPotentialWinnings > 0 ? colorsRGB.success : colorsRGB.warning }
+              ]}>
+                {demoStats.userPotentialWinnings > 0 ? '+' : ''}{demoStats.userPotentialWinnings.toFixed(1)}
+              </ThemedText>
+              <ThemedText style={styles.statLabel}>Ganancia Potencial ($MON)</ThemedText>
+            </View>
           </View>
         </View>
 
-        {/* Estadísticas */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <ThemedText style={styles.statValue}>{totalBets}</ThemedText>
-            <ThemedText style={styles.statLabel}>Total Participaciones</ThemedText>
+        {/* Estadísticas Contratos Reales (si existen) */}
+        {userBets.length > 0 && (
+          <View style={styles.statsContainer}>
+            <View style={styles.statsHeader}>
+              <ThemedText style={styles.statsTitle}>⛓️ Contratos Reales</ThemedText>
+            </View>
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statValue}>{totalBets}</ThemedText>
+                <ThemedText style={styles.statLabel}>Total Participaciones</ThemedText>
+              </View>
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statValue}>{wonBets}</ThemedText>
+                <ThemedText style={styles.statLabel}>Ganadas</ThemedText>
+              </View>
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statValue}>{lostBets}</ThemedText>
+                <ThemedText style={styles.statLabel}>Perdidas</ThemedText>
+              </View>
+              <View style={styles.statItem}>
+                <ThemedText style={styles.statValue}>{pendingBets}</ThemedText>
+                <ThemedText style={styles.statLabel}>Pendientes</ThemedText>
+              </View>
+            </View>
           </View>
-          <View style={styles.statItem}>
-            <ThemedText style={styles.statValue}>{wonBets}</ThemedText>
-            <ThemedText style={styles.statLabel}>Ganadas</ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText style={styles.statValue}>{lostBets}</ThemedText>
-            <ThemedText style={styles.statLabel}>Perdidas</ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText style={styles.statValue}>{pendingBets}</ThemedText>
-            <ThemedText style={styles.statLabel}>Pendientes</ThemedText>
-          </View>
-        </View>
+        )}
 
         {/* Ganancias totales */}
         <View style={styles.winningsContainer}>
@@ -228,17 +331,82 @@ export default function ProfileScreen() {
           <ThemedText style={styles.winningsValue}>+{totalWinnings.toFixed(2)} MXNB</ThemedText>
         </View>
 
-        {/* Historial de participaciones */}
+        {/* Historial de Compras */}
         <View style={styles.historyContainer}>
-          <ThemedText style={styles.historyTitle}>Historial de Participaciones</ThemedText>
+          <View style={styles.historyHeader}>
+            <ThemedText style={styles.historyTitle}>💰 Historial de Compras</ThemedText>
+            {purchases.length > 0 && (
+              <TouchableOpacity 
+                style={styles.resetButton}
+                onPress={() => Alert.alert(
+                  'Resetear Datos',
+                  '¿Seguro que quieres resetear tu balance y compras? Volverás a tener 1000 $MON.',
+                  [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Resetear', style: 'destructive', onPress: resetData }
+                  ]
+                )}
+              >
+                <ThemedText style={styles.resetButtonText}>🔄 Reset</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
           
-          {userBets.length === 0 ? (
+          {purchases.length === 0 ? (
             <View style={styles.emptyContainer}>
               <ThemedText style={styles.emptyText}>
-                No tienes participaciones aún. ¡Empieza a participar en los mercados!
+                No has realizado compras aún. ¡Ve a los mercados y haz tu primera apuesta!
               </ThemedText>
             </View>
           ) : (
+            <FlatList
+              data={purchases.slice().reverse()} // Más recientes primero
+              renderItem={({ item }) => (
+                <View style={styles.purchaseItem}>
+                  <View style={styles.purchaseHeader}>
+                    <View style={styles.purchaseInfo}>
+                      <ThemedText style={styles.purchaseQuestion} numberOfLines={2}>
+                        {item.marketQuestion}
+                      </ThemedText>
+                      <ThemedText style={styles.purchaseDate}>
+                        {new Date(item.timestamp).toLocaleDateString('es-MX', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </ThemedText>
+                    </View>
+                    <View style={[styles.optionBadge, item.option === 'A' ? styles.optionABadge : styles.optionBBadge]}>
+                      <ThemedText style={styles.optionBadgeText}>Opción {item.option}</ThemedText>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.purchaseDetails}>
+                    <View style={styles.purchaseRow}>
+                      <ThemedText style={styles.purchaseLabel}>Opción elegida:</ThemedText>
+                      <ThemedText style={styles.purchaseValue}>{item.optionText}</ThemedText>
+                    </View>
+                    <View style={styles.purchaseRow}>
+                      <ThemedText style={styles.purchaseLabel}>Monto invertido:</ThemedText>
+                      <ThemedText style={styles.purchaseValue}>{item.amount.toFixed(2)} $MON</ThemedText>
+                    </View>
+                  </View>
+                </View>
+              )}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </View>
+
+        {/* Historial de participaciones */}
+        {userBets.length > 0 && (
+          <View style={styles.historyContainer}>
+            <ThemedText style={styles.historyTitle}>⛓️ Contratos Reales</ThemedText>
+            
             <FlatList
               data={userBets}
               renderItem={renderBet}
@@ -254,8 +422,8 @@ export default function ProfileScreen() {
                 />
               }
             />
-          )}
-        </View>
+          </View>
+        )}
       </ScrollView>
     </ThemedView>
   );
@@ -355,18 +523,71 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
   },
   balanceLabel: {
     fontSize: 16,
     color: colorsRGB.mutedForeground,
+    flex: 1,
+  },
+  balanceWithStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   balanceValue: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: colorsRGB.primary,
   },
+  realBadge: {
+    backgroundColor: '#22C55E',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  realBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  demoBadge: {
+    backgroundColor: '#3B82F6',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  demoBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  errorContainer: {
+    backgroundColor: '#FEF2F2',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#DC2626',
+  },
+  helpContainer: {
+    backgroundColor: '#F0F9FF',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  helpText: {
+    fontSize: 12,
+    color: '#0369A1',
+    textAlign: 'center',
+  },
   statsContainer: {
-    flexDirection: 'row',
     backgroundColor: colorsRGB.card,
     borderRadius: 16,
     padding: 20,
@@ -380,9 +601,24 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
+  statsHeader: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  statsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colorsRGB.cardForeground,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+  },
   statItem: {
     flex: 1,
     alignItems: 'center',
+    minWidth: '40%',
   },
   statValue: {
     fontSize: 24,
@@ -512,5 +748,84 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 20,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  resetButton: {
+    backgroundColor: colorsRGB.destructive,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  resetButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  purchaseItem: {
+    backgroundColor: colorsRGB.muted,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colorsRGB.border,
+  },
+  purchaseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  purchaseInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  purchaseQuestion: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colorsRGB.cardForeground,
+    marginBottom: 4,
+    lineHeight: 20,
+  },
+  purchaseDate: {
+    fontSize: 12,
+    color: colorsRGB.mutedForeground,
+  },
+  optionBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  optionABadge: {
+    backgroundColor: colorsRGB.secondary,
+  },
+  optionBBadge: {
+    backgroundColor: colorsRGB.primary,
+  },
+  optionBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  purchaseDetails: {
+    gap: 8,
+  },
+  purchaseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  purchaseLabel: {
+    fontSize: 14,
+    color: colorsRGB.mutedForeground,
+  },
+  purchaseValue: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colorsRGB.cardForeground,
   },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
-import SwapTokens from '@/components/SwapTokens';
+import MockSwapTokens from '@/components/MockSwapTokens';
 
 export default function SwapScreen() {
-  return <SwapTokens />;
+  return <MockSwapTokens />;
 }

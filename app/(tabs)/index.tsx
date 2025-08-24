@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import MarketList from '@/components/MarketList';
+import MockMarketList from '@/components/MockMarketList';
 
 export default function HomeScreen() {
-  return <MarketList />;
+  return <MockMarketList />;
 }

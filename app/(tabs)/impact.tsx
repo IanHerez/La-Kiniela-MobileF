@@ -4,130 +4,55 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
+  Linking,
 } from 'react-native';
-import { MARKET_CATEGORIES } from '@/config/contracts';
+import { useSocialImpact } from '@/hooks/useSocialImpact';
 import { useAuth } from '@/hooks/useAuth';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { colorsRGB } from '@/src/config/colors';
 import LaKinielaLogo from '@/components/LaKinielaLogo';
 
-// Datos de ejemplo para el impacto social
-const SOCIAL_IMPACT_DATA = {
-  totalDonated: 15420.50,
-  totalMarkets: 89,
-  activeCauses: 6,
-  monthlyGoal: 25000,
-  categories: [
-    {
-      id: 'sports',
-      name: 'Deportes',
-      donated: 3850.25,
-      markets: 23,
-      percentage: 10,
-      cause: 'Fundación Deportiva para Niños',
-      description: 'Apoyando el desarrollo deportivo de niños en comunidades vulnerables',
-      website: 'https://fundaciondeportiva.org',
-    },
-    {
-      id: 'politics',
-      name: 'Política',
-      donated: 5780.75,
-      markets: 15,
-      percentage: 15,
-      cause: 'Transparencia Electoral',
-      description: 'Promoviendo la transparencia y participación ciudadana en procesos electorales',
-      website: 'https://transparenciaelectoral.mx',
-    },
-    {
-      id: 'entertainment',
-      name: 'Entretenimiento',
-      donated: 1540.20,
-      markets: 18,
-      percentage: 8,
-      cause: 'Arte para Todos',
-      description: 'Llevando arte y cultura a comunidades marginadas',
-      website: 'https://arteparatodos.org',
-    },
-    {
-      id: 'technology',
-      name: 'Tecnología',
-      donated: 2310.30,
-      markets: 12,
-      percentage: 12,
-      cause: 'Código para México',
-      description: 'Enseñando programación a jóvenes de bajos recursos',
-      website: 'https://codigoparamexico.org',
-    },
-    {
-      id: 'finance',
-      name: 'Finanzas',
-      donated: 3084.00,
-      markets: 8,
-      percentage: 20,
-      cause: 'Educación Financiera',
-      description: 'Capacitando a familias en gestión financiera responsable',
-      website: 'https://educacionfinanciera.mx',
-    },
-    {
-      id: 'other',
-      name: 'Otros',
-      donated: 3855.00,
-      markets: 13,
-      percentage: 5,
-      cause: 'Fondo de Emergencias',
-      description: 'Apoyo inmediato para comunidades afectadas por desastres naturales',
-      website: 'https://fondoemergencias.org',
-    },
-  ],
-};
+// ✅ Datos reales desde el hook
 
-interface CategoryCardProps {
-  category: any;
+interface CauseCardProps {
+  cause: {
+    id: string;
+    name: string;
+    description: string;
+    feePercentage: number;
+    totalDonated: number;
+    website: string;
+    color: string;
+  };
   onPress: () => void;
 }
 
-const CategoryCard: React.FC<CategoryCardProps> = ({ category, onPress }) => {
-  const progressPercentage = (category.donated / category.monthlyGoal) * 100;
-  
+const CauseCard: React.FC<CauseCardProps> = ({ cause, onPress }) => {
   return (
-    <TouchableOpacity style={styles.categoryCard} onPress={onPress}>
-      <View style={styles.categoryHeader}>
-        <View style={styles.categoryInfo}>
-          <ThemedText style={styles.categoryName}>{category.name}</ThemedText>
-          <ThemedText style={styles.categoryPercentage}>
-            {category.percentage}% de comisiones
+    <TouchableOpacity style={[styles.causeCard, { borderLeftColor: cause.color }]} onPress={onPress}>
+      <View style={styles.causeHeader}>
+        <View style={styles.causeInfo}>
+          <ThemedText style={styles.causeName}>{cause.name}</ThemedText>
+          <ThemedText style={styles.causePercentage}>
+            {cause.feePercentage}% de cada compra
           </ThemedText>
         </View>
-        <View style={styles.categoryStats}>
+        <View style={styles.causeStats}>
           <ThemedText style={styles.donatedAmount}>
-            ${category.donated.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                         {cause.totalDonated.toFixed(2)} $MON
           </ThemedText>
-          <ThemedText style={styles.marketsCount}>
-            {category.markets} mercados
-          </ThemedText>
+          <ThemedText style={styles.donatedLabel}>Total donado</ThemedText>
         </View>
       </View>
       
-      <View style={styles.causeInfo}>
-        <ThemedText style={styles.causeName}>{category.cause}</ThemedText>
-        <ThemedText style={styles.causeDescription} numberOfLines={2}>
-          {category.description}
-        </ThemedText>
-      </View>
+      <ThemedText style={styles.causeDescription} numberOfLines={2}>
+        {cause.description}
+      </ThemedText>
       
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View 
-            style={[
-              styles.progressFill, 
-              { width: `${Math.min(progressPercentage, 100)}%` }
-            ]} 
-          />
-        </View>
-        <ThemedText style={styles.progressText}>
-          {progressPercentage.toFixed(1)}% del objetivo mensual
-        </ThemedText>
+      <View style={styles.causeFooter}>
+        <ThemedText style={styles.websiteText}>Ver más →</ThemedText>
       </View>
     </TouchableOpacity>
   );
@@ -135,10 +60,33 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, onPress }) => {
 
 export default function ImpactScreen() {
   const { isConnected, isOnCorrectNetwork } = useAuth();
+  const { causes, donations, stats, isLoading, resetImpactData } = useSocialImpact();
   
-  const handleCategoryPress = (category: any) => {
-    // TODO: Navegar a detalle de la causa o abrir sitio web
-    console.log('Categoría seleccionada:', category);
+  const handleCausePress = (cause: any) => {
+    Alert.alert(
+      cause.name,
+             `${cause.description}\n\nTotal donado: ${cause.totalDonated.toFixed(2)} $MON\nPorcentaje del fee: ${cause.feePercentage}%\n\n¿Quieres visitar su sitio web?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Visitar sitio', 
+          onPress: () => Linking.openURL(cause.website).catch(() => 
+            Alert.alert('Error', 'No se pudo abrir el sitio web')
+          )
+        }
+      ]
+    );
+  };
+
+  const handleReset = () => {
+    Alert.alert(
+      'Resetear Datos de Impacto',
+      '¿Seguro que quieres resetear todos los datos de impacto social?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Resetear', style: 'destructive', onPress: resetImpactData }
+      ]
+    );
   };
 
   // Verificar autenticación y red
@@ -160,9 +108,9 @@ export default function ImpactScreen() {
     );
   }
 
-  const totalDonated = SOCIAL_IMPACT_DATA.totalDonated;
-  const monthlyGoal = SOCIAL_IMPACT_DATA.monthlyGoal;
-  const progressPercentage = (totalDonated / monthlyGoal) * 100;
+  const totalDonated = stats.totalDonated;
+  const monthlyGoal = stats.monthlyGoal;
+  const progressPercentage = stats.progressPercentage;
 
   return (
     <ThemedView style={styles.container}>
@@ -184,18 +132,18 @@ export default function ImpactScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <ThemedText style={styles.statValue}>
-              ${totalDonated.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              {totalDonated.toFixed(2)} $MON
             </ThemedText>
             <ThemedText style={styles.statLabel}>Total Donado</ThemedText>
           </View>
           
           <View style={styles.statCard}>
-            <ThemedText style={styles.statValue}>{SOCIAL_IMPACT_DATA.totalMarkets}</ThemedText>
-            <ThemedText style={styles.statLabel}>Mercados Activos</ThemedText>
+            <ThemedText style={styles.statValue}>{stats.totalDonations}</ThemedText>
+            <ThemedText style={styles.statLabel}>Donaciones</ThemedText>
           </View>
           
           <View style={styles.statCard}>
-            <ThemedText style={styles.statValue}>{SOCIAL_IMPACT_DATA.activeCauses}</ThemedText>
+            <ThemedText style={styles.statValue}>{causes.length}</ThemedText>
             <ThemedText style={styles.statLabel}>Causas Activas</ThemedText>
           </View>
         </View>
@@ -205,7 +153,7 @@ export default function ImpactScreen() {
           <View style={styles.progressHeader}>
             <ThemedText style={styles.progressTitle}>Objetivo Mensual</ThemedText>
             <ThemedText style={styles.progressAmount}>
-              ${monthlyGoal.toLocaleString('es-MX')}
+              {monthlyGoal} $MON
             </ThemedText>
           </View>
           
@@ -223,22 +171,29 @@ export default function ImpactScreen() {
               {progressPercentage.toFixed(1)}% completado
             </ThemedText>
             <ThemedText style={styles.progressRemaining}>
-              ${(monthlyGoal - totalDonated).toLocaleString('es-MX', { minimumFractionDigits: 2 })} restantes
+              {stats.remaining.toFixed(2)} $MON restantes
             </ThemedText>
           </View>
         </View>
 
-        {/* Categorías y causas */}
-        <View style={styles.categoriesContainer}>
-          <ThemedText style={styles.categoriesTitle}>
-            Causas por Categoría
-          </ThemedText>
+        {/* Causas sociales */}
+        <View style={styles.causesContainer}>
+          <View style={styles.causesHeader}>
+            <ThemedText style={styles.causesTitle}>
+              Causas Sociales
+            </ThemedText>
+            {donations.length > 0 && (
+              <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+                <ThemedText style={styles.resetButtonText}>🔄 Reset</ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
           
-          {SOCIAL_IMPACT_DATA.categories.map((category) => (
-            <CategoryCard
-              key={category.id}
-              category={category}
-              onPress={() => handleCategoryPress(category)}
+          {causes.map((cause) => (
+            <CauseCard
+              key={cause.id}
+              cause={cause}
+              onPress={() => handleCausePress(cause)}
             />
           ))}
         </View>
@@ -247,16 +202,16 @@ export default function ImpactScreen() {
         <View style={styles.infoContainer}>
           <ThemedText style={styles.infoTitle}>¿Cómo funciona?</ThemedText>
           <ThemedText style={styles.infoText}>
-            • Cada mercado de predicción genera comisiones que se distribuyen automáticamente
+            • Cada compra de shares genera un fee del 10% destinado a causas sociales
           </ThemedText>
           <ThemedText style={styles.infoText}>
-            • El porcentaje de impacto social varía según la categoría del mercado
+            • El 10% se divide equitativamente: 5% para Educación Digital y 5% para Medio Ambiente
           </ThemedText>
           <ThemedText style={styles.infoText}>
-            • Las donaciones se procesan mensualmente y se envían directamente a las organizaciones
+            • Las donaciones se rastrean en tiempo real y se acumulan automáticamente
           </ThemedText>
           <ThemedText style={styles.infoText}>
-            • Puedes ver el impacto en tiempo real y rastrear cada transacción en la blockchain
+            • Tu participación en mercados contribuye directamente a proyectos sociales reales
           </ThemedText>
         </View>
 
@@ -386,20 +341,37 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colorsRGB.cardForeground,
   },
-  categoriesContainer: {
+  causesContainer: {
     marginBottom: 24,
   },
-  categoriesTitle: {
+  causesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  causesTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: colorsRGB.cardForeground,
-    marginBottom: 16,
   },
-  categoryCard: {
+  resetButton: {
+    backgroundColor: colorsRGB.destructive,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  resetButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  causeCard: {
     backgroundColor: colorsRGB.card,
     padding: 20,
     borderRadius: 16,
     marginBottom: 16,
+    borderLeftWidth: 4,
     shadowColor: colorsRGB.foreground,
     shadowOffset: {
       width: 0,
@@ -409,27 +381,27 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  categoryHeader: {
+  causeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  categoryInfo: {
+  causeInfo: {
     flex: 1,
     marginRight: 16,
   },
-  categoryName: {
+  causeName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: colorsRGB.cardForeground,
     marginBottom: 4,
   },
-  categoryPercentage: {
+  causePercentage: {
     fontSize: 14,
     color: colorsRGB.mutedForeground,
   },
-  categoryStats: {
+  causeStats: {
     alignItems: 'flex-end',
   },
   donatedAmount: {
@@ -438,23 +410,23 @@ const styles = StyleSheet.create({
     color: colorsRGB.primary,
     marginBottom: 4,
   },
-  marketsCount: {
+  donatedLabel: {
     fontSize: 12,
     color: colorsRGB.mutedForeground,
-  },
-  causeInfo: {
-    marginBottom: 16,
-  },
-  causeName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colorsRGB.cardForeground,
-    marginBottom: 8,
   },
   causeDescription: {
     fontSize: 14,
     color: colorsRGB.mutedForeground,
     lineHeight: 20,
+    marginBottom: 12,
+  },
+  causeFooter: {
+    alignItems: 'flex-end',
+  },
+  websiteText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colorsRGB.primary,
   },
   infoContainer: {
     backgroundColor: colorsRGB.card,
