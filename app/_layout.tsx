@@ -5,7 +5,8 @@ import {
   defaultWagmiConfig
 } from "@reown/appkit-wagmi-react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { mainnet, monadTestnet } from "@wagmi/core/chains";
+import { mainnet } from "@wagmi/core/chains";
+import { monadTestnet } from "@/config/chains";
 import { WagmiProvider } from "wagmi";
 
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -16,22 +17,23 @@ import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { View } from "react-native";
+import AuthGuard from '@/components/AuthGuard';
 
 // 0. Setup queryClient
 const queryClient = new QueryClient();
 
 // 1. Get projectId at https://dashboard.reown.com
-const projectId = "b8e39dfb697ba26ac5a77a4b29b35604"; // This project ID will only work for Expo Go. Use your own project ID for production.
+const projectId = process.env.EXPO_PUBLIC_REOWN_PROJECT_ID || "b8e39dfb697ba26ac5a77a4b29b35604";
 
 // 2. Create config
 const metadata = {
-  name: "AppKit RN",
-  description: "AppKit RN Example",
-  url: "https://reown.com/appkit",
+  name: "La Kiniela",
+  description: "Mercados de predicción descentralizados con impacto social",
+  url: "https://lakiniela.com",
   icons: ["https://avatars.githubusercontent.com/u/179229932"],
   redirect: {
-    native: "YOUR_APP_SCHEME://",
-    universal: "YOUR_APP_UNIVERSAL_LINK.com",
+    native: "lakiniela://",
+    universal: "lakiniela.com",
   },
 };
 
@@ -65,10 +67,12 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
+          <AuthGuard>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </AuthGuard>
           {/* This is a workaround for the Android modal issue. https://github.com/expo/expo/issues/32991#issuecomment-2489620459 */}
           <View style={{ position: "absolute", height: "100%", width: "100%" }}>
             <AppKit />
