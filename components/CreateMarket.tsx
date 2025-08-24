@@ -62,7 +62,7 @@ export default function CreateMarket() {
       return;
     }
     if (parseFloat(form.stake) < minimumBet) {
-      Alert.alert('Error', `La apuesta mínima es ${minimumBet} MXNB`);
+      Alert.alert('Error', `La participación mínima es ${minimumBet} MXNB`);
       return;
     }
     if (form.closingTime <= Math.floor(Date.now() / 1000)) {
@@ -255,9 +255,9 @@ export default function CreateMarket() {
           </ThemedText>
         </View>
 
-        {/* Apuesta inicial */}
+        {/* Participación inicial */}
         <View style={styles.inputGroup}>
-          <ThemedText style={styles.label}>Apuesta Inicial (MXNB) *</ThemedText>
+          <ThemedText style={styles.label}>Participación Inicial (MXNB) *</ThemedText>
           <TextInput
             style={styles.textInput}
             value={form.stake}
@@ -266,7 +266,7 @@ export default function CreateMarket() {
             keyboardType="numeric"
           />
           <ThemedText style={styles.helperText}>
-            Apuesta mínima: {minimumBet} MXNB
+            Participación mínima: {minimumBet} MXNB
           </ThemedText>
         </View>
 

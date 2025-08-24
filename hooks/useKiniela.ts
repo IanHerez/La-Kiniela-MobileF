@@ -26,7 +26,7 @@ export function useKinielaContract() {
     });
   };
 
-  // Obtener apuestas del usuario
+  // Obtener participaciones del usuario
   const { data: userBets, isLoading: betsLoading } = useReadContract({
     address: CONTRACTS.KINIELA_MARKET,
     abi: KINIELA_MARKET_ABI,
@@ -35,7 +35,7 @@ export function useKinielaContract() {
     enabled: !!address,
   });
 
-  // Obtener información de una apuesta específica
+  // Obtener información de una participación específica
   const useBetInfo = (betId: string) => {
     return useReadContract({
       address: CONTRACTS.KINIELA_MARKET,
@@ -55,7 +55,7 @@ export function useKinielaContract() {
     enabled: !!address,
   });
 
-  // Obtener apuesta mínima
+  // Obtener participación mínima
   const { data: minimumBet } = useReadContract({
     address: CONTRACTS.KINIELA_MARKET,
     abi: KINIELA_MARKET_ABI,
@@ -107,7 +107,7 @@ export function useKinielaContract() {
     },
   });
 
-  // Hacer apuesta
+  // Participar en mercado
   const placeBet = useMutation({
     mutationFn: async ({
       marketId,

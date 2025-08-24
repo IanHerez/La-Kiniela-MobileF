@@ -5,7 +5,7 @@ Aplicación móvil para La Kiniela, un sistema descentralizado de mercados de pr
 ## 🚀 Características Principales
 
 - **Mercados de Predicción**: Crea y participa en mercados binarios sobre eventos futuros
-- **Staking con MXNB**: Apuesta tokens MXNB para ganar recompensas
+- **Staking con MXNB**: Invierte tokens MXNB para ganar recompensas
 - **Impacto Social**: Parte de las comisiones se destinan automáticamente a causas benéficas
 - **Swaps de Tokens**: Intercambia MXNB por otros tokens usando la API 0x
 - **Wallet Web3**: Conexión segura usando Reown AppKit
@@ -39,7 +39,7 @@ Aplicación móvil para La Kiniela, un sistema descentralizado de mercados de pr
 ### 3. Perfil
 
 - Balance de tokens
-- Historial de apuestas
+- Historial de participaciones
 - Estadísticas de rendimiento
 - Reclamar ganancias
 
@@ -89,7 +89,7 @@ EXPO_PUBLIC_USDC_TOKEN_ADDRESS=0x...
 Los contratos deben estar desplegados en Monad Testnet con las siguientes funciones:
 
 - `createMarket()`: Crear nuevo mercado
-- `placeBet()`: Hacer apuesta
+- `placeBet()`: Participar en mercado
 - `claimWinnings()`: Reclamar ganancias
 - `resolveMarket()`: Resolver mercado
 - `getMarketInfo()`: Obtener información del mercado

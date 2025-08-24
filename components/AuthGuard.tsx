@@ -91,7 +91,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             </ThemedText>
             <ThemedText style={styles.description}>
               Conecta tu wallet para participar en mercados de predicción, 
-              hacer apuestas y contribuir a causas sociales.
+              participar en mercados y contribuir a causas sociales.
             </ThemedText>
           </View>
 

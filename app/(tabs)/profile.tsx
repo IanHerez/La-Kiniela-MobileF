@@ -149,7 +149,7 @@ export default function ProfileScreen() {
           </ThemedText>
           <ThemedText style={styles.connectSubtitle}>
             {!isConnected 
-              ? 'Conecta tu wallet para ver tu perfil y historial de apuestas'
+              ? 'Conecta tu wallet para ver tu perfil y historial de participaciones'
               : 'Debes estar conectado a Monad Testnet para usar La Kiniela'
             }
           </ThemedText>
@@ -206,7 +206,7 @@ export default function ProfileScreen() {
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <ThemedText style={styles.statValue}>{totalBets}</ThemedText>
-            <ThemedText style={styles.statLabel}>Total Apuestas</ThemedText>
+            <ThemedText style={styles.statLabel}>Total Participaciones</ThemedText>
           </View>
           <View style={styles.statItem}>
             <ThemedText style={styles.statValue}>{wonBets}</ThemedText>
@@ -228,14 +228,14 @@ export default function ProfileScreen() {
           <ThemedText style={styles.winningsValue}>+{totalWinnings.toFixed(2)} MXNB</ThemedText>
         </View>
 
-        {/* Historial de apuestas */}
+        {/* Historial de participaciones */}
         <View style={styles.historyContainer}>
-          <ThemedText style={styles.historyTitle}>Historial de Apuestas</ThemedText>
+          <ThemedText style={styles.historyTitle}>Historial de Participaciones</ThemedText>
           
           {userBets.length === 0 ? (
             <View style={styles.emptyContainer}>
               <ThemedText style={styles.emptyText}>
-                No tienes apuestas aún. ¡Empieza a apostar en los mercados!
+                No tienes participaciones aún. ¡Empieza a participar en los mercados!
               </ThemedText>
             </View>
           ) : (

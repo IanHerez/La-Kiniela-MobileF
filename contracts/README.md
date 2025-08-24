@@ -7,6 +7,7 @@ Esta carpeta contiene los smart contracts principales para La Kiniela, una plata
 ## 🔧 Arquitectura de Contratos
 
 ### 🎯 PredictionMarketWithCharity.sol
+
 **Contrato principal para mercados de predicciones con integración benéfica**
 
 #### Estructuras de Datos Principales
@@ -30,6 +31,7 @@ struct Market {
 #### Métodos Principales
 
 **🔨 Funciones de Administración**
+
 ```solidity
 function createMarket(
     string memory _question,
@@ -39,11 +41,13 @@ function createMarket(
     CharityManager.CharityCause _selectedCause
 ) external onlyOwner
 ```
+
 - **Parámetros**: Pregunta, opciones A/B, duración en segundos, causa benéfica
 - **Restricciones**: Solo owner, duración > 1 hora
 - **Emite**: `MarketCreated(marketId, question, optionA, optionB, endTime)`
 
 **💰 Funciones de Trading**
+
 ```solidity
 function buyShares(
     uint256 _marketId,
@@ -51,8 +55,9 @@ function buyShares(
     uint256 _amount
 ) external nonReentrant
 ```
+
 - **Parámetros**: ID del mercado, opción elegida (true=A, false=B), cantidad de tokens
-- **Validaciones**: 
+- **Validaciones**:
   - Mercado no terminado (`block.timestamp < market.endTime`)
   - Cantidad mínima 1e6 tokens
   - Balance y allowance suficientes
@@ -60,27 +65,33 @@ function buyShares(
 - **Emite**: `SharesPurchased(marketId, user, isOptionA, amount)`
 
 **⚖️ Funciones de Resolución**
+
 ```solidity
 function resolveMarket(uint256 _marketId, MarketOutcome _outcome) external onlyOwner
 function emergencyResolveMarket(uint256 _marketId, MarketOutcome _outcome) external onlyOwner
 ```
+
 - **Diferencias**: `resolveMarket` requiere que haya terminado el tiempo, `emergencyResolveMarket` no
 - **Outcomes válidos**: `OPTION_A`, `OPTION_B`, `CANCELLED`
 - **Efectos**: Marca mercado como resuelto y ejecuta `_distributeFees()`
 
 **🎁 Funciones de Claim**
+
 ```solidity
 function claimWinnings(uint256 _marketId) external nonReentrant
 ```
-- **Lógica de payout**: 
+
+- **Lógica de payout**:
   - Si ganaste: `(tus_shares / total_shares_ganadoras) * (pool_total - fees)`
   - Si cancelado: Reembolso completo de tus shares
 - **Protecciones**: Un solo claim por usuario, mercado debe estar resuelto
 
 #### Sistema de Fees y Distribución
+
 ```solidity
 function _distributeFees(uint256 _marketId) internal
 ```
+
 - **Cálculo**: `totalFees = (totalPool * platformFeePercentage) / 10000`
 - **Distribución automática**:
   - Porcentaje configurable a la causa específica del mercado
@@ -90,13 +101,15 @@ function _distributeFees(uint256 _marketId) internal
 ---
 
 ### 💖 CharityManager.sol
+
 **Gestor centralizado de causas benéficas**
 
 #### Enum de Causas
+
 ```solidity
 enum CharityCause {
     NONE,           // 0 - Sin causa
-    EDUCATION,      // 1 - Educación  
+    EDUCATION,      // 1 - Educación
     ENVIRONMENT,    // 2 - Medio Ambiente
     HEALTH,         // 3 - Salud
     POVERTY         // 4 - Pobreza
@@ -106,25 +119,31 @@ enum CharityCause {
 #### Métodos de Configuración
 
 **🔧 Configuración de Causas**
+
 ```solidity
 function setCharityWallet(CharityCause _cause, address _wallet) external onlyOwner
 ```
+
 - **Efecto**: Asigna wallet y activa automáticamente la causa
 - **Validación**: Causa válida (!= NONE) y dirección != address(0)
 
 ```solidity
 function setCharityActive(CharityCause _cause, bool _isActive) external onlyOwner
 ```
+
 - **Uso**: Activar/desactivar causas sin cambiar wallet
 
 **📊 Configuración de Porcentajes**
+
 ```solidity
 function setCharityFeePercentage(uint256 _newPercentage) external onlyOwner
 ```
+
 - **Base**: 10000 (ej: 500 = 5%, 1000 = 10%)
 - **Máximo**: 5000 (50% del fee total)
 
 #### Métodos de Consulta
+
 ```solidity
 function getCharityInfo(CharityCause _cause) external view returns (
     string memory name,
@@ -138,12 +157,14 @@ function getCharityInfo(CharityCause _cause) external view returns (
 ```solidity
 function recordDonation(CharityCause _cause, uint256 _amount) external
 ```
+
 - **Restricción**: Solo callable por contratos autorizados
 - **Efecto**: Incrementa `totalReceived` para estadísticas
 
 ## 🔄 Flujo Técnico Completo
 
 ### 1. **Setup Inicial**
+
 ```solidity
 // Deploy CharityManager
 CharityManager charityManager = new CharityManager(tokenAddress, 1000); // 10%
@@ -162,22 +183,24 @@ charityManager.setCharityWallet(CharityCause.HEALTH, healthWallet);
 ```
 
 ### 2. **Creación y Trading**
+
 ```solidity
 // Crear mercado con causa específica
 market.createMarket(
     "¿Quién ganará el clásico Real Madrid vs Barcelona?",
     "Real Madrid",
-    "Barcelona", 
+    "Barcelona",
     86400,  // 24 horas
     CharityCause.EDUCATION
 );
 
 // Usuario compra shares
 token.approve(address(market), 1000e18);
-market.buyShares(0, true, 1000e18); // Apuesta a opción A
+market.buyShares(0, true, 1000e18); // Participa en opción A
 ```
 
 ### 3. **Resolución y Claims**
+
 ```solidity
 // Resolver mercado (solo owner)
 market.resolveMarket(0, MarketOutcome.OPTION_A);
@@ -189,6 +212,7 @@ market.claimWinnings(0);
 ## 🛡️ Características de Seguridad
 
 ### Protecciones Implementadas
+
 - **ReentrancyGuard**: Todas las funciones de transferencia
 - **Ownable**: Funciones administrativas restringidas
 - **Custom Errors**: Gas-efficient error handling
@@ -196,10 +220,11 @@ market.claimWinnings(0);
 - **Balance/Allowance Verification**: Antes de cada `transferFrom`
 
 ### Validaciones Críticas
+
 - Mercados no pueden resolverse antes de tiempo (excepto emergency)
 - Usuarios no pueden hacer claim múltiples veces
 - Causas inactivas no reciben fondos automáticamente
-- Mínimo de apuesta para evitar spam (1e6 tokens)
+- Mínimo de participación para evitar spam (1e6 tokens)
 
 ## 📝 Consideraciones de Deployment
 
@@ -211,7 +236,7 @@ market.claimWinnings(0);
 
 ## 🔗 Integraciones Requeridas
 
-- **Token ERC20**: Para apuestas y pagos
+- **Token ERC20**: Para participaciones y pagos
 - **Oracle/Admin**: Para resolución de mercados
 - **Frontend**: Para interacción de usuarios
 - **Wallets Benéficas**: Direcciones verificadas para cada causa
